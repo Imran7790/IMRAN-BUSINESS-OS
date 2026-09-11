@@ -11,6 +11,15 @@ DATABASE_URL = os.getenv(
     f"sqlite:///{DEFAULT_DATABASE_PATH}"
 )
 
+# Render PostgreSQL uses a standard postgresql:// URL.
+# Force SQLAlchemy to use the installed psycopg 3 driver.
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgresql://",
+        "postgresql+psycopg://",
+        1
+    )
+
 connect_args = {}
 
 if DATABASE_URL.startswith("sqlite"):
