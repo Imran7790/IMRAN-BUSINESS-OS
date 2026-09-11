@@ -1,0 +1,55 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local databases and backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+backups/
+
+# Android
+android/.gradle/
+android/**/build/
+android/**/.cxx/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+
+# Gradle
+.gradle/
+build/
+
+# IDE/editor
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary/project backups
+*.bak
+*.before_*
+
+# Backup files
+*.bak*

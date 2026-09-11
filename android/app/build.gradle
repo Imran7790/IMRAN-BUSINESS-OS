@@ -1,0 +1,22 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.imran.businessos'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.imran.businessos'
+        minSdk 26
+        targetSdk 34
+        versionCode 2
+        versionName '1.1.0'
+    }
+}
+
+def props = new Properties()
+def propsFile = rootProject.file("gradle.properties")
+if (propsFile.exists()) {
+    propsFile.withInputStream { props.load(it) }
+}

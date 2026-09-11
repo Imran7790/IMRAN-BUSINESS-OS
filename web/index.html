@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMRAN BUSINESS OS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loginScreen" class="screen">
+        <div class="login-card">
+            <div class="brand">IMRAN</div>
+            <h1>BUSINESS OS</h1>
+            <p class="muted">Business management platform</p>
+
+            <form id="loginForm">
+                <input id="email" type="email" placeholder="Business email" required>
+                <input id="password" type="password" placeholder="Password" required>
+                <button type="submit">Sign in</button>
+            </form>
+
+            <div id="loginError" class="error"></div>
+        </div>
+    </div>
+
+    <div id="appScreen" class="app hidden">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand">IMRAN</div>
+                <span>BUSINESS OS</span>
+            </div>
+
+            <nav>
+                <button class="nav-item active" data-section="dashboard">Dashboard</button>
+                <button class="nav-item" data-section="sales">Sales</button>
+                <button class="nav-item" data-section="purchases">Purchases</button>
+                <button class="nav-item" data-section="inventory">Inventory</button>
+                <button class="nav-item" data-section="customers">Customers</button>
+                <button class="nav-item" data-section="suppliers">Suppliers</button>
+                <button class="nav-item" data-section="employees">Employees</button>
+                <button class="nav-item" data-section="services">Services</button>
+                <button class="nav-item" data-section="appointments">Appointments</button>
+                <button class="nav-item" data-section="invoices">Invoices</button>
+                <button class="nav-item" data-section="notifications">Notifications</button>
+            </nav>
+
+            <button id="logoutButton" class="logout">Sign out</button>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="connectionStatus" class="muted">Connecting...</p>
+                </div>
+                <button id="refreshButton" class="refresh">Refresh</button>
+            </header>
+
+            <section id="dashboard" class="section">
+                <div class="welcome">
+                    <div>
+                        <span class="eyebrow">BUSINESS COMMAND CENTER</span>
+                        <h1 id="businessName">Your Business</h1>
+                        <p id="businessInfo" class="muted">Business management platform</p>
+                        <p id="userInfo" class="muted"></p>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <span>Customers</span>
+                        <strong id="customersCount">—</strong>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Products</span>
+                        <strong id="productsCount">—</strong>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Employees</span>
+                        <strong id="employeesCount">—</strong>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Services</span>
+                        <strong id="servicesCount">—</strong>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Invoices</span>
+                        <strong id="invoicesCount">—</strong>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>Notifications</span>
+                        <strong id="notificationsCount">—</strong>
+                    </div>
+                </div>
+
+                <div class="grid-two">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>Business activity</h3>
+                        </div>
+                        <div id="activityList" class="activity-list">
+                            Loading...
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>Stock attention</h3>
+                        </div>
+                        <div id="stockList" class="activity-list">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="genericSection" class="section hidden">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 id="sectionHeading">Records</h3>
+                        <span id="recordCount" class="muted"></span>
+                    </div>
+
+                    <div id="records" class="records">
+                        Loading...
+                    </div>
+                </div>
+            </section>
+
+            <div id="globalError" class="error"></div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
