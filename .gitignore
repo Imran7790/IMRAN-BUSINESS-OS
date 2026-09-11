@@ -53,3 +53,7 @@ Thumbs.db
 
 # Backup files
 *.bak*
+
+# Backup files
+*.backup*
+*mangled_backup*
