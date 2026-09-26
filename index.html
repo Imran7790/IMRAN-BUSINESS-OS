@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>LAW SMART — Secure Meeting</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07111f;--panel:#0d1b2a;--panel2:#12243a;--text:#f5f7fa;--muted:#9fb0c4;--line:#24364b;--accent:#2dd4bf;--danger:#ef4444}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#12304b 0,#07111f 45%,#050b13 100%);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);min-height:100vh}
+    .wrap{width:min(1100px,100%);margin:auto;padding:20px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{font-weight:800;letter-spacing:.08em}.status{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:#64748b}.dot.live{background:var(--accent)}
+    .card{background:rgba(13,27,42,.9);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.22)}
+    .join{max-width:560px;margin:8vh auto}.join h1{margin:0 0 8px;font-size:28px}.join p{color:var(--muted);line-height:1.5}.field{display:grid;gap:8px;margin:16px 0}.field label{font-size:14px;color:var(--muted)}input{width:100%;padding:14px 15px;border-radius:12px;border:1px solid var(--line);background:#091522;color:var(--text);font-size:16px;outline:none}input:focus{border-color:var(--accent)}
+    button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;color:#061016;background:var(--accent);cursor:pointer;min-height:44px}button:disabled{opacity:.5;cursor:not-allowed}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.danger{background:var(--danger);color:white}
+    .error{display:none;margin-top:14px;padding:12px;border-radius:12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fecaca}.error.show{display:block}
+    .meeting{display:none}.meeting.show{display:block}.title{margin:0;font-size:21px}.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+    .video-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:16px}.tile{position:relative;aspect-ratio:16/10;background:#02070d;border:1px solid var(--line);border-radius:16px;overflow:hidden}.tile video{width:100%;height:100%;object-fit:cover;background:#02070d}.label{position:absolute;left:10px;bottom:10px;padding:5px 8px;border-radius:8px;background:rgba(0,0,0,.65);font-size:12px}.empty{height:100%;display:grid;place-items:center;color:var(--muted);padding:20px;text-align:center}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.info{margin-top:14px;color:var(--muted);font-size:13px}.hidden{display:none!important}
+    @media(max-width:600px){.wrap{padding:12px}.join{margin:4vh auto}.card{padding:14px}.video-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top"><div class="brand">LAW SMART</div><div class="status"><span id="dot" class="dot"></span><span id="status">Preparing secure meeting…</span></div></div>
+
+  <section id="joinCard" class="card join">
+    <h1>Join secure meeting</h1>
+    <p id="meetingHint">Your invitation is being verified. This link is private and can only be used once.</p>
+    <div id="nameField" class="field hidden"><label for="name">Your name</label><input id="name" maxlength="80" autocomplete="name" placeholder="Enter your name"></div>
+    <button id="joinBtn" disabled>Join meeting</button>
+    <div id="error" class="error" role="alert"></div>
+  </section>
+
+  <section id="meeting" class="meeting">
+    <div class="card">
+      <h2 id="meetingTitle" class="title">LAW SMART Meeting</h2>
+      <p id="meetingSub" class="sub">Secure browser participant</p>
+      <div id="videos" class="video-grid">
+        <div id="empty" class="tile"><div class="empty">Waiting for video…</div></div>
+      </div>
+      <div class="controls">
+        <button id="micBtn" class="secondary" disabled>Microphone</button>
+        <button id="camBtn" class="secondary" disabled>Camera</button>
+        <button id="leaveBtn" class="danger" disabled>Leave meeting</button>
+      </div>
+      <div id="info" class="info">LAW SMART secure meeting. No JaaS or 8×8 branding.</div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/dist/livekit-client.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  const SUPABASE_URL="https://vncslefixaepsjpyrvez.supabase.co";
+  const GUEST_ENDPOINT=SUPABASE_URL+"/functions/v1/meeting-guest";
+  const $=id=>document.getElementById(id);
+  const token=new URLSearchParams(location.search).get("token")||"";
+  let room=null, localAudio=false, localVideo=false, joined=false;
+
+  function setStatus(t,live){$("status").textContent=t;$("dot").classList.toggle("live",!!live)}
+  function showError(t){$("error").textContent=t;$("error").classList.add("show")}
+  function clearError(){$("error").textContent="";$("error").classList.remove("show")}
+  function esc(t){return String(t||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+
+  if(!token || token.length<32){setStatus("Invalid invitation",false);showError("This invitation link is invalid or incomplete.");return}
+  if(!window.LivekitClient){setStatus("Browser library failed",false);showError("The meeting component could not load. Please refresh or try another browser.");return}
+
+  async function verify(){
+    try{
+      setStatus("Verifying invitation…",false);
+      const r=await fetch(GUEST_ENDPOINT+"?token="+encodeURIComponent(token),{method:"GET",headers:{"Accept":"application/json"},cache:"no-store"});
+      let data={};try{data=await r.json()}catch(_){}
+      if(!r.ok || !data.success) throw new Error(data.error||("Invitation verification failed ("+r.status+")"));
+      $("meetingHint").textContent="Invitation verified for "+(data.guest?.display_name||"guest")+".";
+      $("name").value=data.guest?.display_name||"";
+      $("nameField").classList.remove("hidden");
+      $("joinBtn").disabled=false;
+      $("joinBtn").onclick=()=>join(data);
+      setStatus("Invitation verified",true);
+    }catch(e){setStatus("Invitation unavailable",false);showError(e.message||"Unable to verify invitation.")}
+  }
+
+  function addVideo(track,identity,name){
+    $("empty")?.remove();
+    const tile=document.createElement("div");tile.className="tile";tile.dataset.identity=identity||"";
+    const video=document.createElement("video");video.autoplay=true;video.playsInline=true;video.controls=false;
+    tile.appendChild(video);const label=document.createElement("div");label.className="label";label.textContent=name||identity||"Participant";tile.appendChild(label);
+    $("videos").appendChild(tile);track.attach(video);
+  }
+  function removeParticipant(identity){document.querySelectorAll(".tile").forEach(x=>{if(x.dataset.identity===identity)x.remove()});if(!$("videos").querySelector(".tile")){const e=document.createElement("div");e.id="empty";e.className="tile";e.innerHTML='<div class="empty">Waiting for video…</div>';$("videos").appendChild(e)}}
+
+  async function join(data){
+    clearError();$("joinBtn").disabled=true;setStatus("Joining secure meeting…",false);
+    try{
+      room=new LivekitClient.Room({adaptiveStream:true,dynacast:true});
+      room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,publication,participant)=>{
+        if(track.kind===LivekitClient.Track.Kind.Video)addVideo(track,participant.identity,participant.name);
+        if(track.kind===LivekitClient.Track.Kind.Audio){const el=track.attach();el.autoplay=true;document.body.appendChild(el)}
+      });
+      room.on(LivekitClient.RoomEvent.TrackUnsubscribed,(track,publication,participant)=>{track.detach().forEach(el=>el.remove())});
+      room.on(LivekitClient.RoomEvent.ParticipantDisconnected,p=>removeParticipant(p.identity));
+      room.on(LivekitClient.RoomEvent.Disconnected,()=>{joined=false;setStatus("Disconnected",false);$("micBtn").disabled=true;$("camBtn").disabled=true;$("leaveBtn").disabled=true});
+      await room.connect(data.server_url,data.participant_token);
+      joined=true;
+      $("joinCard").classList.add("hidden");$("meeting").classList.add("show");
+      $("meetingTitle").textContent=data.meeting?.title||"LAW SMART Meeting";
+      $("meetingSub").textContent=(data.guest?.display_name||"Guest")+" • "+(data.guest?.role||"guest");
+      $("micBtn").disabled=false;$("camBtn").disabled=false;$("leaveBtn").disabled=false;
+      await enableLocal();
+      setStatus("Connected",true);
+    }catch(e){setStatus("Unable to join",false);showError(e.message||"Unable to join meeting.");$("joinBtn").disabled=false}
+  }
+
+  async function enableLocal(){
+    try{await room.localParticipant.setMicrophoneEnabled(true);localAudio=true;updateButtons()}catch(_){localAudio=false}
+    try{await room.localParticipant.setCameraEnabled(true);localVideo=true;updateButtons()}catch(_){localVideo=false}
+  }
+  function updateButtons(){$("micBtn").textContent=localAudio?"Mute microphone":"Unmute microphone";$("camBtn").textContent=localVideo?"Turn camera off":"Turn camera on"}
+  $("micBtn").onclick=async()=>{if(!room)return;try{localAudio=!localAudio;await room.localParticipant.setMicrophoneEnabled(localAudio);updateButtons()}catch(e){showError(e.message||"Microphone change failed.")}};
+  $("camBtn").onclick=async()=>{if(!room)return;try{localVideo=!localVideo;await room.localParticipant.setCameraEnabled(localVideo);updateButtons()}catch(e){showError(e.message||"Camera change failed.")}};
+  $("leaveBtn").onclick=async()=>{if(!room)return;await room.disconnect();setStatus("You left the meeting",false);$("leaveBtn").disabled=true;$("micBtn").disabled=true;$("camBtn").disabled=true};
+  verify();
+})();
+</script>
+</body>
+</html>
